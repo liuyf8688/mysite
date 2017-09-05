@@ -1,34 +1,25 @@
 from django.shortcuts import get_object_or_404, render
-from django.http import Http404
-
-# Create your views here.
-
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.template import loader
-from .models import Question
+from django.views import generic
 
-def index(request):
-    latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    template = loader.get_template('polls/index.html')
-    context = { 'latest_question_list': latest_question_list, }
-    return HttpResponse(template.render(context, request))
+from .models import Choice, Question
 
-def detail(request, question_id):
-    # return HttpResponse("You're looking at question %s." % question_id)
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_question_list'
 
-    #try:
-    #    question = Question.objects.get(pk=question_id)
-    #except Question.DoesNotExist:
-    #    raise Http404("Question does not exist")
-    #return render(request, 'polls/detail.html', {'question': question})
+    def get_queryset(self):
+        """Return the last five published question."""
+        return Question.objects.order_by('-pub_date')[:5]
 
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls/detail.html', {'question': question})
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = 'polls/detail.html'
 
-def results(request, question_id):
-    response = "You're looking at the results of question %s."
-    return HttpResponse(response % question_id)
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
 
 def vote(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
@@ -43,7 +34,3 @@ def vote(request, question_id):
         selected_choice.votes += 1
         selected_choice.save()
         return HttpResponseRedirect(reverse('polls:results', args=(question_id,)))
-
-def results(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls/results.html', {'question': question})
